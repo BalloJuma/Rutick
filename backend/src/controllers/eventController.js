@@ -131,7 +131,7 @@ exports.getEvent = async (req, res, next) => {
 // Create event (staff/admin only)
 exports.createEvent = async (req, res, next) => {
     try {
-        const { title, description, category, date, time, duration, location, capacity, tags } = req.body;
+        const { title, description, category, date, time, duration, location, capacity, tags, image } = req.body;
 
         // Validation
         if (!title || !description || !category || !date || !time || !location || !capacity) {
@@ -159,6 +159,7 @@ exports.createEvent = async (req, res, next) => {
             location,
             capacity,
             tags: tags ? tags.split(',').map(t => t.trim()) : [],
+            banner: image || null, // Store base64 image as banner
             organizerId: req.user.id
         });
 
