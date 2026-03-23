@@ -490,22 +490,26 @@ function viewTicket(eventId) {
     });
 }
 
-async function createEvent() {
+async function handleCreateEvent() {
     console.log('CREATE EVENT button clicked');
     console.log('Current user:', currentUser);
     console.log('Is authenticated:', isAuthenticated());
 
     // Check authentication first
     if (!isAuthenticated()) {
+        console.log('❌ Not authenticated');
         showNotification('Error', 'You must be logged in to create an event', 'error');
         return;
     }
 
     // Check authorization - only admin and staff can create events
     if (currentUser && currentUser.role !== 'admin' && currentUser.role !== 'staff') {
+        console.log('❌ Not authorized. Current role:', currentUser.role);
         showNotification('Error', 'Only administrators and staff can create events', 'error');
         return;
     }
+
+    console.log('✅ Authentication and authorization passed');
 
     const title = document.getElementById('eventTitle').value.trim();
     const category = document.getElementById('eventCategory').value;
@@ -516,27 +520,36 @@ async function createEvent() {
     const capacity = parseInt(document.getElementById('eventCapacity').value);
     const imageFile = document.getElementById('eventImage').files[0];
 
+    console.log('Form values:', { title, category, description, date, time, location, capacity, imageFile });
+
     // Validate inputs
     if (!title || !description || !date || !time || !location || !capacity) {
+        console.log('❌ Validation failed: missing required fields');
         showNotification('Validation Error', 'Please fill in all required fields', 'error');
         return;
     }
 
     if (title.length < 5) {
+        console.log('❌ Validation failed: title too short');
         showNotification('Validation Error', 'Event title must be at least 5 characters', 'error');
         return;
     }
 
     if (capacity < 1 || capacity > 10000) {
+        console.log('❌ Validation failed: invalid capacity');
         showNotification('Validation Error', 'Capacity must be between 1 and 10000', 'error');
         return;
     }
 
     const eventDate = new Date(date + 'T' + time);
+    console.log('Parsed event date:', eventDate);
     if (eventDate < new Date()) {
+        console.log('❌ Validation failed: date in past');
         showNotification('Validation Error', 'Event date cannot be in the past', 'error');
         return;
     }
+
+    console.log('✅ All validations passed');
 
     // Call backend API to create event
     const eventData = {
@@ -549,15 +562,21 @@ async function createEvent() {
         capacity: capacity
     };
 
+    console.log('Sending event data:', eventData);
+
     // Handle image upload if provided
     if (imageFile) {
+        console.log('📸 Processing image upload...');
         const reader = new FileReader();
         reader.onload = async (e) => {
             eventData.image = e.target.result; // Base64 encoded image
+            console.log('📸 Image processed, calling API...');
 
             const result = await eventAPI.create(eventData);
+            console.log('📸 API result:', result);
 
             if (result.success) {
+                console.log('✅ Event created successfully');
                 closeCreateEventModal();
                 // Clear form
                 document.getElementById('eventTitle').value = '';
@@ -572,15 +591,19 @@ async function createEvent() {
                 loadEvents();
                 showNotification('Event Created', title + ' has been created successfully!');
             } else {
+                console.log('❌ Event creation failed:', result.error);
                 showNotification('Error', result.error || 'Failed to create event', 'error');
             }
         };
         reader.readAsDataURL(imageFile);
     } else {
         // No image - proceed without it
+        console.log('📝 No image, calling API directly...');
         const result = await eventAPI.create(eventData);
+        console.log('📝 API result:', result);
 
         if (result.success) {
+            console.log('✅ Event created successfully');
             closeCreateEventModal();
             // Clear form
             document.getElementById('eventTitle').value = '';
@@ -595,6 +618,7 @@ async function createEvent() {
             loadEvents();
             showNotification('Event Created', title + ' has been created successfully!');
         } else {
+            console.log('❌ Event creation failed:', result.error);
             showNotification('Error', result.error || 'Failed to create event', 'error');
         }
     }

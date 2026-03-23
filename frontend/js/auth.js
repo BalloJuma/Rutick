@@ -25,7 +25,7 @@ function validateLoginForm() {
 }
 
 // Secure login with API structure (ready for backend)
-function login() {
+async function login() {
     const validation = validateLoginForm();
 
     if (!validation.isValid) {
@@ -38,22 +38,23 @@ function login() {
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
 
-    // In production: POST to secure backend endpoint
-    // fetch(`${API_BASE}/api/auth/login`, {
-    //     method: 'POST',
-    //     headers: {
-    //         'Content-Type': 'application/json',
-    //         'X-CSRF-Token': getCsrfToken()
-    //     },
-    //     credentials: 'include', // Send cookies with secure httpOnly flag
-    //     body: JSON.stringify({ email, password })
-    // })
-    // .then(response => response.json())
-    // .then(data => { /* Handle auth token */ })
-    // .catch(error => showNotification('Error', 'Login failed', 'error'));
+    try {
+        console.log('🔐 Attempting login for:', email);
+        const result = await authAPI.login(email, password);
+        console.log('🔐 Login result:', result);
 
-    // Development only: Simulated auth for testing UI
-    simulateLogin(email);
+        if (result.success) {
+            currentUser = result.data.user;
+            sessionStorage.setItem('authToken', result.data.token);
+            showDashboard();
+            showNotification('Login Successful', `Welcome back, ${currentUser.firstName}!`);
+        } else {
+            showNotification('Login Failed', result.error || 'Invalid credentials', 'error');
+        }
+    } catch (error) {
+        console.error('Login error:', error);
+        showNotification('Error', 'Login failed. Please try again.', 'error');
+    }
 }
 
 // Simulate login for development (remove in production)
@@ -131,7 +132,7 @@ function validateRegistrationForm() {
 }
 
 // Secure registration with API structure
-function register() {
+async function register() {
     const validation = validateRegistrationForm();
 
     if (!validation.isValid) {
@@ -148,22 +149,23 @@ function register() {
     const department = document.getElementById('regDepartment').value;
     const password = document.getElementById('regPassword').value;
 
-    // In production: POST to secure backend endpoint with HTTPS
-    // fetch(`${API_BASE}/api/auth/register`, {
-    //     method: 'POST',
-    //     headers: {
-    //         'Content-Type': 'application/json',
-    //         'X-CSRF-Token': getCsrfToken()
-    //     },
-    //     credentials: 'include',
-    //     body: JSON.stringify({ firstName, lastName, email, id, department, password })
-    // })
-    // .then(response => response.json())
-    // .then(data => { /* Handle response */ })
-    // .catch(error => showNotification('Error', 'Registration failed', 'error'));
+    try {
+        console.log('📝 Attempting registration for:', email);
+        const result = await authAPI.register(firstName, lastName, email, id, department, password);
+        console.log('📝 Registration result:', result);
 
-    // Development: Mock registration
-    simulateRegister(firstName, lastName, email, id, department);
+        if (result.success) {
+            currentUser = result.data.user;
+            sessionStorage.setItem('authToken', result.data.token);
+            showDashboard();
+            showNotification('Registration Successful', `Welcome to Tanga Tunga, ${firstName}!`);
+        } else {
+            showNotification('Registration Failed', result.error || 'Registration failed', 'error');
+        }
+    } catch (error) {
+        console.error('Registration error:', error);
+        showNotification('Error', 'Registration failed. Please try again.', 'error');
+    }
 }
 
 // Simulate registration for development (remove in production)

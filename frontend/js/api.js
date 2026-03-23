@@ -1,5 +1,5 @@
 // API Configuration
-const API_BASE_URL = process.env.API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = (typeof window !== 'undefined' && window.API_URL) || 'http://localhost:5000/api';
 
 // Utility functions for API calls
 const apiCall = async (endpoint, options = {}) => {
@@ -15,6 +15,8 @@ const apiCall = async (endpoint, options = {}) => {
     }
 
     try {
+        console.log(`📡 API Call: ${options.method || 'GET'} ${url}`);
+
         const response = await fetch(url, {
             ...options,
             headers: {
@@ -25,13 +27,15 @@ const apiCall = async (endpoint, options = {}) => {
 
         const data = await response.json();
 
+        console.log(`📥 API Response [${response.status}]:`, data);
+
         if (!response.ok) {
             throw new Error(data.message || 'API request failed');
         }
 
         return { success: true, data };
     } catch (error) {
-        console.error(`API Error [${endpoint}]:`, error);
+        console.error(`❌ API Error [${endpoint}]:`, error);
         return { success: false, error: error.message };
     }
 };
@@ -171,16 +175,34 @@ const certificateAPI = {
         apiDelete(`/certificates/${certificateId}`)
 };
 
-module.exports = {
-    apiCall,
-    apiGet,
-    apiPost,
-    apiPut,
-    apiDelete,
-    authAPI,
-    eventAPI,
-    registrationAPI,
-    userAPI,
-    reviewAPI,
-    certificateAPI
-};
+// For browser use, attach APIs to window so modules are available to inline scripts
+if (typeof window !== 'undefined') {
+    window.apiCall = apiCall;
+    window.apiGet = apiGet;
+    window.apiPost = apiPost;
+    window.apiPut = apiPut;
+    window.apiDelete = apiDelete;
+    window.authAPI = authAPI;
+    window.eventAPI = eventAPI;
+    window.registrationAPI = registrationAPI;
+    window.userAPI = userAPI;
+    window.reviewAPI = reviewAPI;
+    window.certificateAPI = certificateAPI;
+}
+
+// For node/commonjs usage
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        apiCall,
+        apiGet,
+        apiPost,
+        apiPut,
+        apiDelete,
+        authAPI,
+        eventAPI,
+        registrationAPI,
+        userAPI,
+        reviewAPI,
+        certificateAPI
+    };
+}
