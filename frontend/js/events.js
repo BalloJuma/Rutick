@@ -222,7 +222,7 @@ async function loadEvents() {
                 const ticketBtn = document.createElement('button');
                 ticketBtn.className = 'btn btn-warning';
                 ticketBtn.textContent = 'View Ticket';
-                ticketBtn.onclick = () => viewTicket(event.id);
+                ticketBtn.onclick = () => viewTicket(event._id);
                 actions.appendChild(ticketBtn);
             }
 
@@ -272,7 +272,12 @@ function viewEvent(eventId) {
             return;
         }
 
-        const event = result.event;
+        const event = result.data?.event;
+        if (!event) {
+            showNotification('Error', 'Failed to load event details', 'error');
+            return;
+        }
+
         const modal = document.getElementById('eventModal');
         const isRegistered = event.isRegistered || false;
 
@@ -406,12 +411,17 @@ function viewTicket(eventId) {
 
     // Fetch event from API to verify registration
     eventAPI.getById(eventId).then(result => {
-        if (!result.success || !result.event.isRegistered) {
+        if (!result.success) {
+            showNotification('Error', 'Failed to load ticket', 'error');
+            return;
+        }
+
+        const event = result.data?.event;
+        if (!event || !event.isRegistered) {
             showNotification('Error', 'You are not registered for this event', 'error');
             return;
         }
 
-        const event = result.event;
         const modal = document.getElementById('eventModal');
 
         // Use textContent for safe content
