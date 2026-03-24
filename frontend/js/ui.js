@@ -18,6 +18,7 @@ function goToAuth(defaultTab = 'login') {
     const appPages = document.getElementById('appPages');
     const authSection = document.getElementById('authSection');
     const dashboardSection = document.getElementById('dashboardSection');
+    const userInfo = document.getElementById('userInfo');
 
     if (homePage) {
         homePage.style.display = 'none';
@@ -34,6 +35,10 @@ function goToAuth(defaultTab = 'login') {
     if (dashboardSection) {
         dashboardSection.style.display = 'none';
         console.log('Hidden dashboardSection');
+    }
+    if (userInfo) {
+        userInfo.style.display = 'none';
+        console.log('Hidden userInfo');
     }
 
     // Switch to the specified tab

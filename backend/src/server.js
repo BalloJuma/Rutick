@@ -16,8 +16,14 @@ connectDB();
 app.use(helmet());
 
 // CORS configuration
+const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000').split(',').map(o => o.trim());
 app.use(cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+        return callback(new Error(`CORS policy: origin ${origin} not allowed`), false);
+    },
     credentials: true,
     optionsSuccessStatus: 200
 }));
