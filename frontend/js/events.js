@@ -470,9 +470,11 @@ function registerForEvent(eventId) {
     // Call API to register
     registrationAPI.register(eventId).then(result => {
         if (result.success) {
+            // Store registration data for later use
+            sessionStorage.setItem(`registration_${eventId}`, JSON.stringify(result.data.registration));
             updateStats();
             loadEvents();
-            showNotification('Registration Successful', 'You are now registered for this event!');
+            showNotification('Registration Successful', 'You are now registered for this event!', 'success');
         } else {
             showNotification('Error', result.message || 'Failed to register for event', 'error');
         }
@@ -488,19 +490,29 @@ function viewTicket(eventId) {
         return;
     }
 
-    // Fetch event from API to verify registration
-    eventAPI.getById(eventId).then(result => {
-        if (!result.success) {
+    // Fetch both event and registration details
+    Promise.all([
+        eventAPI.getById(eventId),
+        registrationAPI.getMyRegistration(eventId)
+    ]).then(([eventResult, regResult]) => {
+        if (!eventResult.success) {
             showNotification('Error', 'Failed to load ticket', 'error');
             return;
         }
 
-        const event = result.data?.event;
-        if (!event || !event.isRegistered) {
+        const event = eventResult.data?.event;
+        if (!event) {
+            showNotification('Error', 'Event not found', 'error');
+            return;
+        }
+
+        // Check if user is registered via result
+        if (!regResult.success || !regResult.data?.registration) {
             showNotification('Error', 'You are not registered for this event', 'error');
             return;
         }
 
+        const registration = regResult.data.registration;
         const modal = document.getElementById('eventModal');
 
         // Use textContent for safe content
@@ -516,19 +528,32 @@ function viewTicket(eventId) {
         title.textContent = event.title;
         qrContainer.appendChild(title);
 
-        const qrCode = document.createElement('div');
-        qrCode.className = 'qr-code';
-        const qrEmoji = document.createElement('div');
-        qrEmoji.style.fontSize = '80px';
-        qrEmoji.textContent = '📱';
-        qrCode.appendChild(qrEmoji);
-        qrContainer.appendChild(qrCode);
+        // Display actual QR code image
+        if (registration.qrCode) {
+            const qrCodeDiv = document.createElement('div');
+            qrCodeDiv.className = 'qr-code';
+            const qrImg = document.createElement('img');
+            qrImg.src = registration.qrCode;
+            qrImg.alt = 'QR Code';
+            qrImg.style.maxWidth = '300px';
+            qrImg.style.height = 'auto';
+            qrCodeDiv.appendChild(qrImg);
+            qrContainer.appendChild(qrCodeDiv);
+        } else {
+            const qrCode = document.createElement('div');
+            qrCode.className = 'qr-code';
+            const qrEmoji = document.createElement('div');
+            qrEmoji.style.fontSize = '80px';
+            qrEmoji.textContent = '📱';
+            qrCode.appendChild(qrEmoji);
+            qrContainer.appendChild(qrCode);
+        }
 
         const ticketId = document.createElement('p');
         const ticketLabel = document.createElement('strong');
         ticketLabel.textContent = 'Ticket ID: ';
         ticketId.appendChild(ticketLabel);
-        ticketId.appendChild(document.createTextNode('RU-TICKET-' + eventId));
+        ticketId.appendChild(document.createTextNode(registration.ticketId || 'RU-TICKET-' + eventId));
         qrContainer.appendChild(ticketId);
 
         const name = document.createElement('p');
@@ -558,6 +583,14 @@ function viewTicket(eventId) {
         instruction.textContent = 'Show this QR code at the event entrance for check-in';
         qrContainer.appendChild(instruction);
 
+        // Add download button
+        const downloadBtn = document.createElement('button');
+        downloadBtn.className = 'btn btn-primary';
+        downloadBtn.style.marginTop = '15px';
+        downloadBtn.textContent = '📥 Download Ticket';
+        downloadBtn.onclick = () => downloadTicketImage(eventId, event.title);
+        qrContainer.appendChild(downloadBtn);
+
         contentContainer.appendChild(qrContainer);
 
         const actions = document.createElement('div');
@@ -577,6 +610,88 @@ function viewTicket(eventId) {
         console.error('Error fetching ticket:', error);
         showNotification('Error', 'Failed to load ticket', 'error');
     });
+}
+
+function downloadTicketImage(eventId, eventTitle) {
+    try {
+        const qrImg = document.querySelector('.qr-code img');
+        if (!qrImg) {
+            showNotification('Error', 'QR code not found', 'error');
+            return;
+        }
+
+        // Create a canvas to draw the ticket
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const padding = 20;
+        const width = 400;
+        const height = 550;
+
+        canvas.width = width;
+        canvas.height = height;
+
+        // White background
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, width, height);
+
+        // Border
+        ctx.strokeStyle = '#667eea';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(5, 5, width - 10, height - 10);
+
+        // Title
+        ctx.fillStyle = '#333';
+        ctx.font = 'bold 16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('EVENT TICKET', width / 2, 40);
+
+        ctx.font = '14px Arial';
+        ctx.fillStyle = '#666';
+        ctx.fillText(eventTitle, width / 2, 70);
+
+        // Draw the QR code image
+        const img = new Image();
+        img.onload = function() {
+            const qrSize = 250;
+            const qrX = (width - qrSize) / 2;
+            ctx.drawImage(img, qrX, 100, qrSize, qrSize);
+
+            // Add text below QR code
+            ctx.fillStyle = '#999';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Show this code at event entrance', width / 2, 380);
+
+            // User name
+            if (currentUser) {
+                ctx.fillStyle = '#333';
+                ctx.font = 'bold 12px Arial';
+                ctx.fillText(currentUser.firstName + ' ' + currentUser.lastName, width / 2, 410);
+            }
+
+            // Date generated
+            ctx.fillStyle = '#999';
+            ctx.font = '10px Arial';
+            ctx.fillText('Generated: ' + new Date().toLocaleDateString(), width / 2, 430);
+
+            // Download the canvas as image
+            canvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `ticket-${eventTitle.replace(/\\s+/g, '-')}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                showNotification('Success', 'Ticket downloaded successfully', 'success');
+            });
+        };
+        img.src = qrImg.src;
+    } catch (error) {
+        console.error('Error downloading ticket:', error);
+        showNotification('Error', 'Failed to download ticket: ' + error.message, 'error');
+    }
 }
 
 async function handleCreateEvent() {

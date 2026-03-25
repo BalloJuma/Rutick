@@ -3,6 +3,17 @@
  * Handles navigation, modals, notifications, and dashboard display
  */
 
+// Safe text encoding
+function escapeHtml(text) {
+    if (!text) return '';
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 // Navigation functions
 function goToHome() {
     console.log('goToHome() called');
@@ -90,6 +101,58 @@ function showDashboard() {
     updateStats();
     loadReminders();
     loadEvents();
+}
+
+async function loadReminders() {
+    if (!isAuthenticated()) return;
+
+    const reminderContainer = document.getElementById('reminderSection');
+    const reminderList = document.getElementById('reminderList');
+    if (!reminderContainer || !reminderList) return;
+
+    const result = await userAPI.getReminders(currentUser.id);
+    if (!result.success) {
+        reminderList.innerHTML = '<p class="empty-state">Failed to load reminders.</p>';
+        return;
+    }
+
+    const reminders = result.data.reminders || [];
+    if (reminders.length === 0) {
+        reminderList.innerHTML = '<p class="empty-state">No reminders yet. Register for events to get reminders.</p>';
+        return;
+    }
+
+    reminderList.innerHTML = '';
+    reminders.forEach(reminder => {
+        const reminderCard = document.createElement('div');
+        reminderCard.className = `reminder-card ${reminder.read ? 'reminder-read' : 'reminder-unread'}`;
+
+        let eventTitle = 'Event';
+        if (reminder.event && reminder.event.title) eventTitle = reminder.event.title;
+
+        reminderCard.innerHTML = `
+            <div class="reminder-row">
+                <div><strong>${escapeHtml(eventTitle)}</strong></div>
+                <div>${new Date(reminder.scheduledFor).toLocaleString()}</div>
+                <div>${reminder.status}</div>
+            </div>
+            <div class="reminder-actions">
+                ${reminder.read ? '<span class="badge badge-success">Read</span>' : `<button class="btn btn-sm" onclick="markReminderAsRead('${reminder.id}')">Mark as read</button>`}
+            </div>
+        `;
+
+        reminderList.appendChild(reminderCard);
+    });
+}
+
+async function markReminderAsRead(reminderId) {
+    const result = await userAPI.markReminderRead(currentUser.id, reminderId);
+    if (result.success) {
+        showNotification('Success', 'Reminder marked as read', 'success');
+        loadReminders();
+    } else {
+        showNotification('Error', result.error || 'Failed to mark reminder as read', 'error');
+    }
 }
 
 function closeModal() {

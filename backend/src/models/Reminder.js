@@ -25,8 +25,12 @@ const Reminder = sequelize.define('Reminder', {
     },
     sentAt: DataTypes.DATE,
     status: {
-        type: DataTypes.ENUM('pending', 'sent', 'failed', 'read'),
+        type: DataTypes.ENUM('pending', 'sent', 'failed'),
         defaultValue: 'pending',
+    },
+    read: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
     },
     method: {
         type: DataTypes.ENUM('email', 'sms'),

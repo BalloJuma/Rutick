@@ -495,10 +495,48 @@ textarea {
     position: relative;
 }
 
-.event-card:hover {
+..event-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 10px 25px rgba(0,0,0,0.1);
     border-color: #667eea;
+}
+
+.reminder-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+}
+
+.reminder-card {
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid #ddd;
+    background: #fff;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.05);
+}
+
+.reminder-card.reminder-unread {
+    border-left: 4px solid #ff9800;
+}
+
+.reminder-card.reminder-read {
+    border-left: 4px solid #4caf50;
+    opacity: 0.8;
+}
+
+.reminder-row {
+    margin-bottom: 8px;
+}
+
+.reminder-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.btn-sm {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+    border-radius: 6px;
 }
 
 .event-image {
@@ -731,23 +769,51 @@ textarea {
 
 .qr-code-container {
     text-align: center;
-    padding: 20px;
-    background: #f5f5f5;
-    border-radius: 10px;
+    padding: 30px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    border-radius: 15px;
     margin: 20px 0;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    border: 2px solid #e8f0f7;
+}
+
+.qr-code-container h3 {
+    margin-top: 0;
+    color: #333;
+    font-size: 20px;
+    margin-bottom: 20px;
 }
 
 .qr-code {
-    width: 200px;
-    height: 200px;
-    margin: 0 auto 15px;
+    width: 280px;
+    height: 280px;
+    margin: 0 auto 20px;
     background: white;
-    padding: 20px;
-    border-radius: 10px;
+    padding: 15px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 48px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    border: 2px solid #667eea;
+}
+
+.qr-code img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+}
+
+.qr-code-container p {
+    margin: 12px 0;
+    color: #333;
+    font-size: 14px;
+}
+
+.qr-code-container strong {
+    color: #667eea;
+    font-weight: 600;
 }
 
 .certificate-badge {

@@ -200,7 +200,7 @@ exports.markReminderAsRead = async (req, res, next) => {
             return res.status(404).json({ success: false, message: 'Reminder not found' });
         }
 
-        reminder.status = 'read';
+        reminder.read = true;
         await reminder.save();
 
         res.json({ success: true, message: 'Reminder marked as read' });
