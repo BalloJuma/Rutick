@@ -104,6 +104,17 @@ function normalizeEventPhotos(event) {
     return [event.title?.charAt(0) || '📷'];
 }
 
+function getEventOrganizerId(event) {
+    return event?.organizer?.id || event?.organizerId || event?.organizer?._id || null;
+}
+
+function canCurrentUserDeleteEvent(event) {
+    if (!currentUser) return false;
+    if (currentUser.role === 'admin') return true;
+    const organizerId = getEventOrganizerId(event);
+    return organizerId ? String(currentUser.id) === String(organizerId) : false;
+}
+
 function getEventsOnDate(events, date) {
     const targetYear = date.getFullYear();
     const targetMonth = date.getMonth();
@@ -556,6 +567,19 @@ async function loadEvents() {
             viewBtn.onclick = () => viewEvent(event.id);
             actions.appendChild(viewBtn);
 
+            if (canCurrentUserDeleteEvent(event)) {
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn btn-danger';
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.onclick = async (e) => {
+                    e.stopPropagation();
+                    if (confirm('Delete this event? This action cannot be undone.')) {
+                        await deleteEvent(event.id);
+                    }
+                };
+                actions.appendChild(deleteBtn);
+            }
+
             if (!isRegistered && !isPast) {
                 const registerBtn = document.createElement('button');
                 registerBtn.className = 'btn btn-success';
@@ -812,6 +836,18 @@ function viewEvent(eventId) {
         icalBtn.addEventListener('click', () => downloadICal(event));
         actions.appendChild(icalBtn);
 
+        if (canCurrentUserDeleteEvent(event)) {
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'btn btn-danger';
+            deleteBtn.textContent = 'Delete Event';
+            deleteBtn.onclick = async () => {
+                if (confirm('Delete this event? This action cannot be undone.')) {
+                    await deleteEvent(eventId);
+                }
+            };
+            actions.appendChild(deleteBtn);
+        }
+
         const closeBtn = document.createElement('button');
         closeBtn.className = 'btn btn-secondary';
         closeBtn.textContent = 'Close';
@@ -825,6 +861,29 @@ function viewEvent(eventId) {
         console.error('Error fetching event:', error);
         showNotification('Error', 'Failed to load event details', 'error');
     });
+}
+
+async function deleteEvent(eventId) {
+    if (!isAuthenticated()) {
+        showNotification('Error', 'Please log in first', 'error');
+        return;
+    }
+
+    try {
+        const result = await eventAPI.delete(eventId);
+        if (!result.success) {
+            showNotification('Error', result.error || 'Failed to delete event', 'error');
+            return;
+        }
+
+        showNotification('Event deleted successfully', 'The event has been removed.', 'success');
+        updateStats();
+        loadEvents();
+        closeModal();
+    } catch (error) {
+        console.error('Error deleting event:', error);
+        showNotification('Error', 'Failed to delete event', 'error');
+    }
 }
 
 async function updateStats() {

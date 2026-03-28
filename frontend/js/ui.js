@@ -94,8 +94,12 @@ function showDashboard() {
     const avatarElement = document.getElementById('userAvatar');
     avatarElement.textContent = currentUser.firstName.charAt(0).toUpperCase();
 
-    if (currentUser.role === 'admin' || currentUser.role === 'staff') {
-        document.getElementById('createEventBtn').style.display = 'block';
+    const createEventBtn = document.getElementById('createEventBtn');
+    if (createEventBtn) {
+        createEventBtn.style.display = 'none';
+        if (currentUser.role === 'admin' || currentUser.role === 'staff') {
+            createEventBtn.style.display = 'block';
+        }
     }
 
     updateStats();
