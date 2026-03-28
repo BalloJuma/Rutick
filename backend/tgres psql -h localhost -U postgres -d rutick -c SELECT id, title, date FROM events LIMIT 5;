@@ -1,9 +1,0 @@
-                  id                  |              title              |          date          
---------------------------------------+---------------------------------+------------------------
- 5cb6a1d5-366e-48b9-ab57-83485e543f1a | Computer Science Symposium 2024 | 2024-11-15 03:00:00+03
- aa020dea-8c25-42ae-aa2a-6c29757a3c43 | Campus Cultural Festival        | 2024-11-20 03:00:00+03
- e33ef50f-9d38-4ee2-ab33-137f83d11c3f | Career Fair 2024                | 2024-11-25 03:00:00+03
- e893f1fa-5f65-467e-9e59-2f9c1b218db0 | Test Event                      | 2026-12-01 10:00:00+03
- 06b633cc-e2a1-4ab4-a5b3-0db5d4e30cda | jersey wednesday                | 2026-03-31 11:00:00+03
-(5 rows)
-
